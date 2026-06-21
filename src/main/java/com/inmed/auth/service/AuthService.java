@@ -2,6 +2,8 @@ package com.inmed.auth.service;
 
 import com.inmed.auth.dto.AuthResponse;
 import com.inmed.auth.dto.LoginRequest;
+import com.inmed.auth.entity.RefreshToken;
+import com.inmed.exception.custom.InvalidRefreshTokenException;
 import com.inmed.exception.custom.ResourceNotFoundException;
 import com.inmed.security.JwtService;
 import com.inmed.user.entity.User;
@@ -59,6 +61,38 @@ public class AuthService {
         return AuthResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
+                .username(user.getUsername())
+                .role(user.getRole().name())
+                .build();
+    }
+
+    public AuthResponse refreshToken(
+            String refreshToken
+    ) {
+
+        RefreshToken storedToken =
+                refreshTokenService
+                        .findByToken(refreshToken);
+
+        if (!refreshTokenService.isValid(storedToken)) {
+
+            throw new InvalidRefreshTokenException(
+                    "Refresh token expired"
+            );
+        }
+
+        User user =
+                storedToken.getUser();
+
+        String newAccessToken =
+                jwtService.generateToken(
+                        user.getUsername(),
+                        user.getRole().name()
+                );
+
+        return AuthResponse.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(storedToken.getToken())
                 .username(user.getUsername())
                 .role(user.getRole().name())
                 .build();
