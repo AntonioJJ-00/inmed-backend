@@ -2,6 +2,7 @@ package com.inmed.auth.controller;
 
 import com.inmed.auth.dto.AuthResponse;
 import com.inmed.auth.dto.LoginRequest;
+import com.inmed.auth.dto.RefreshRequest;
 import com.inmed.auth.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,5 +23,16 @@ public class AuthController {
     ) {
 
         return authService.login(request);
+    }
+
+    @PostMapping("/refresh")
+    public AuthResponse refreshToken(
+            @RequestBody
+            RefreshRequest request
+    ) {
+
+        return authService.refreshToken(
+                request.getRefreshToken()
+        );
     }
 }

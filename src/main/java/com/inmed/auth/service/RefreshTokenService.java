@@ -2,6 +2,7 @@ package com.inmed.auth.service;
 
 import com.inmed.auth.entity.RefreshToken;
 import com.inmed.auth.repository.RefreshTokenRepository;
+import com.inmed.exception.custom.InvalidRefreshTokenException;
 import com.inmed.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -57,5 +58,18 @@ public class RefreshTokenService {
 
         refreshTokenRepository
                 .deleteByUser(user);
+    }
+
+    public RefreshToken findByToken(
+            String token
+    ) {
+
+        return refreshTokenRepository
+                .findByToken(token)
+                .orElseThrow(() ->
+                        new InvalidRefreshTokenException(
+                                "Refresh token not found"
+                        )
+                );
     }
 }
