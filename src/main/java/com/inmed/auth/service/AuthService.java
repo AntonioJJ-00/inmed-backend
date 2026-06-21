@@ -18,6 +18,8 @@ public class AuthService {
 
     private final PasswordEncoder passwordEncoder;
 
+    private final RefreshTokenService refreshTokenService;
+
     private final JwtService jwtService;
 
     public AuthResponse login(LoginRequest request) {
@@ -43,14 +45,20 @@ public class AuthService {
             );
         }
 
-        String token =
+        String accessToken =
                 jwtService.generateToken(
                         user.getUsername(),
                         user.getRole().name()
                 );
 
+        String refreshToken =
+                refreshTokenService
+                        .createRefreshToken(user)
+                        .getToken();
+
         return AuthResponse.builder()
-                .accessToken(token)
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
                 .username(user.getUsername())
                 .role(user.getRole().name())
                 .build();
