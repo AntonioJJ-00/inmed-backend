@@ -2,6 +2,7 @@ package com.inmed.auth.controller;
 
 import com.inmed.auth.dto.AuthResponse;
 import com.inmed.auth.dto.LoginRequest;
+import com.inmed.auth.dto.LogoutRequest;
 import com.inmed.auth.dto.RefreshRequest;
 import com.inmed.auth.service.AuthService;
 import jakarta.validation.Valid;
@@ -34,5 +35,17 @@ public class AuthController {
         return authService.refreshToken(
                 request.getRefreshToken()
         );
+    }
+
+    @PostMapping("/logout")
+    public String logout(
+            @RequestBody LogoutRequest request
+    ) {
+
+        authService.logout(
+                request.getRefreshToken()
+        );
+
+        return "Logout successful";
     }
 }

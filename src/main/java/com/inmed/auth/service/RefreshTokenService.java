@@ -6,6 +6,7 @@ import com.inmed.exception.custom.InvalidRefreshTokenException;
 import com.inmed.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -16,48 +17,30 @@ public class RefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
 
+    @Transactional
     public RefreshToken createRefreshToken(
             User user
     ) {
 
-        refreshTokenRepository
-                .findByUser(user)
-                .ifPresent(refreshTokenRepository::delete);
+        refreshTokenRepository.deleteByUser(user);
+
+        refreshTokenRepository.flush();
 
         RefreshToken refreshToken =
                 RefreshToken.builder()
-                        .token(
-                                UUID.randomUUID()
-                                        .toString()
-                        )
                         .user(user)
+                        .token(
+                                UUID.randomUUID().toString()
+                        )
                         .expiryDate(
                                 LocalDateTime.now()
                                         .plusDays(7)
                         )
                         .build();
 
-        return refreshTokenRepository
-                .save(refreshToken);
-    }
-
-    public boolean isValid(
-            RefreshToken refreshToken
-    ) {
-
-        return refreshToken
-                .getExpiryDate()
-                .isAfter(
-                        LocalDateTime.now()
-                );
-    }
-
-    public void deleteByUser(
-            User user
-    ) {
-
-        refreshTokenRepository
-                .deleteByUser(user);
+        return refreshTokenRepository.save(
+                refreshToken
+        );
     }
 
     public RefreshToken findByToken(
@@ -71,5 +54,60 @@ public class RefreshTokenService {
                                 "Refresh token not found"
                         )
                 );
+    }
+
+    public RefreshToken findByUser(
+            User user
+    ) {
+
+        return refreshTokenRepository
+                .findByUser(user)
+                .orElseThrow(() ->
+                        new InvalidRefreshTokenException(
+                                "Refresh token not found"
+                        )
+                );
+    }
+
+    public boolean isValid(
+            RefreshToken refreshToken
+    ) {
+
+        return refreshToken
+                .getExpiryDate()
+                .isAfter(
+                        LocalDateTime.now()
+                );
+    }
+
+    @Transactional
+    public void delete(
+            RefreshToken refreshToken
+    ) {
+
+        refreshTokenRepository.delete(
+                refreshToken
+        );
+    }
+
+    @Transactional
+    public void deleteByUser(
+            User user
+    ) {
+
+        refreshTokenRepository
+                .findByUser(user)
+                .ifPresent(
+                        refreshTokenRepository::delete
+                );
+    }
+
+    @Transactional
+    public void deleteByToken(
+            String token
+    ) {
+
+        refreshTokenRepository
+                .deleteByToken(token);
     }
 }
