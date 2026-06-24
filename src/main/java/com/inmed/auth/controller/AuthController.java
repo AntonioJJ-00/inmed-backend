@@ -8,6 +8,9 @@ import com.inmed.auth.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import java.util.List;
+import com.inmed.auth.dto.ActiveSessionResponse;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -47,5 +50,14 @@ public class AuthController {
         );
 
         return "Logout successful";
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/sessions")
+    public List<ActiveSessionResponse>
+    getSessions() {
+
+        return authService
+                .getActiveSessions();
     }
 }
