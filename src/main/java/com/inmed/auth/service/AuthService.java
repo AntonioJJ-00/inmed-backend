@@ -97,4 +97,15 @@ public class AuthService {
                 .role(user.getRole().name())
                 .build();
     }
+
+    public void logout(
+            String refreshToken
+    ) {
+
+        RefreshToken storedToken =
+                refreshTokenService
+                        .findByToken(refreshToken);
+
+        refreshTokenService.delete(storedToken);
+    }
 }
