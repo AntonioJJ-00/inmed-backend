@@ -11,6 +11,9 @@ import com.inmed.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import java.util.List;
+
+import com.inmed.auth.dto.ActiveSessionResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -107,5 +110,31 @@ public class AuthService {
                         .findByToken(refreshToken);
 
         refreshTokenService.delete(storedToken);
+    }
+
+    public List<ActiveSessionResponse>
+    getActiveSessions() {
+
+        return refreshTokenService
+                .findAll()
+                .stream()
+                .map(token ->
+                        ActiveSessionResponse
+                                .builder()
+                                .username(
+                                        token.getUser()
+                                                .getUsername()
+                                )
+                                .role(
+                                        token.getUser()
+                                                .getRole()
+                                                .name()
+                                )
+                                .expiresAt(
+                                        token.getExpiryDate()
+                                )
+                                .build()
+                )
+                .toList();
     }
 }
