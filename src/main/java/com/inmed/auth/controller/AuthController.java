@@ -1,16 +1,12 @@
 package com.inmed.auth.controller;
 
-import com.inmed.auth.dto.AuthResponse;
-import com.inmed.auth.dto.LoginRequest;
-import com.inmed.auth.dto.LogoutRequest;
-import com.inmed.auth.dto.RefreshRequest;
+import com.inmed.auth.dto.*;
 import com.inmed.auth.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.List;
-import com.inmed.auth.dto.ActiveSessionResponse;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -59,5 +55,20 @@ public class AuthController {
 
         return authService
                 .getActiveSessions();
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/force-logout")
+    public String forceLogout(
+            @Valid
+            @RequestBody
+            ForceLogoutRequest request
+    ) {
+
+        authService.forceLogout(
+                request.getUsername()
+        );
+
+        return "User session terminated";
     }
 }

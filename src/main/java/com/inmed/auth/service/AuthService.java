@@ -37,6 +37,13 @@ public class AuthService {
                         )
                 );
 
+        // MODIFICACIÓN AQUÍ: Lanzamos tu excepción personalizada
+        if (!Boolean.TRUE.equals(user.getEnabled())) {
+            throw new com.inmed.exception.custom.UserBlockedException(
+                    "User is blocked"
+            );
+        }
+
         boolean matches =
                 passwordEncoder.matches(
                         request.getPassword(),
@@ -136,5 +143,22 @@ public class AuthService {
                                 .build()
                 )
                 .toList();
+    }
+
+    public void forceLogout(
+            String username
+    ) {
+
+        User user =
+                userRepository
+                        .findByUsername(username)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "User not found"
+                                )
+                        );
+
+        refreshTokenService
+                .deleteByUser(user);
     }
 }

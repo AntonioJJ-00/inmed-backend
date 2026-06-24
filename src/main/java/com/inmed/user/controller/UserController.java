@@ -6,6 +6,8 @@ import com.inmed.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import com.inmed.user.dto.UserStatusRequest;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
@@ -39,5 +41,33 @@ public class UserController {
     @GetMapping("/test")
     public String test() {
         return "Backend funcionando";
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/block")
+    public String blockUser(
+            @Valid
+            @RequestBody UserStatusRequest request
+    ) {
+
+        userService.blockUser(
+                request.getUsername()
+        );
+
+        return "User blocked";
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/unblock")
+    public String unblockUser(
+            @Valid
+            @RequestBody UserStatusRequest request
+    ) {
+
+        userService.unblockUser(
+                request.getUsername()
+        );
+
+        return "User unblocked";
     }
 }
