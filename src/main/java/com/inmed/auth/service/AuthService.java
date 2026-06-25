@@ -5,6 +5,7 @@ import com.inmed.auth.dto.LoginRequest;
 import com.inmed.auth.entity.RefreshToken;
 import com.inmed.exception.custom.InvalidRefreshTokenException;
 import com.inmed.exception.custom.ResourceNotFoundException;
+import com.inmed.exception.custom.UserBlockedException;
 import com.inmed.security.JwtService;
 import com.inmed.user.entity.User;
 import com.inmed.user.repository.UserRepository;
@@ -45,9 +46,19 @@ public class AuthService {
 
         // MODIFICACIÓN AQUÍ: Lanzamos tu excepción personalizada
         if (!Boolean.TRUE.equals(user.getEnabled())) {
-            throw new com.inmed.exception.custom.UserBlockedException(
-                    "User is blocked"
-            );
+
+            boolean unlocked =
+                    userService
+                            .unlockWhenLockExpired(
+                                    user
+                            );
+
+            if (!unlocked) {
+
+                throw new UserBlockedException(
+                        "User is blocked"
+                );
+            }
         }
 
         boolean matches =

@@ -187,4 +187,47 @@ public class UserService {
 
         userRepository.save(user);
     }
+
+    public boolean unlockWhenLockExpired(
+            User user
+    ) {
+
+        if (user.getEnabled()) {
+            return true;
+        }
+
+        if (user.getLockedAt() == null) {
+            return false;
+        }
+
+        LocalDateTime unlockTime =
+                user.getLockedAt()
+                        .plusMinutes(
+                                SecurityConstants
+                                        .LOCK_TIME_MINUTES
+                        );
+
+        if (LocalDateTime.now().isAfter(unlockTime)) {
+
+            user.setEnabled(true);
+
+            user.setFailedLoginAttempts(0);
+
+            user.setLockedAt(null);
+
+            auditService.save(
+                    "SYSTEM",
+                    "AUTO_UNBLOCK",
+                    user.getUsername(),
+                    "Automatic unlock after lock period"
+            );
+
+            userRepository.save(user);
+
+            return true;
+        }
+
+        return false;
+    }
+
 }
