@@ -1,12 +1,15 @@
 package com.inmed.auth.controller;
 
 import com.inmed.auth.dto.*;
+import com.inmed.auth.entity.LoginAudit;
+import com.inmed.auth.repository.LoginAuditRepository;
 import com.inmed.auth.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.List;
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -14,15 +17,22 @@ import java.util.List;
 public class AuthController {
 
     private final AuthService authService;
+    private final LoginAuditRepository loginAuditRepository;
 
     @PostMapping("/login")
     public AuthResponse login(
             @Valid
-            @RequestBody
-            LoginRequest request
+            @RequestBody LoginRequest request,
+            HttpServletRequest servletRequest
     ) {
 
-        return authService.login(request);
+        String ip =
+                servletRequest.getRemoteAddr();
+
+        return authService.login(
+                request,
+                ip
+        );
     }
 
     @PostMapping("/refresh")
@@ -70,5 +80,12 @@ public class AuthController {
         );
 
         return "User session terminated";
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/login-history")
+    public List<LoginAudit> getLoginHistory() {
+
+        return loginAuditRepository.findAll();
     }
 }
