@@ -12,8 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import com.inmed.user.dto.UserStatusRequest;
-import org.springframework.security.access.prepost.PreAuthorize;
+import java.time.LocalDateTime;
+import com.inmed.security.SecurityConstants;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -137,6 +137,53 @@ public class UserService {
                 user.getUsername(),
                 "Unblocked by administrator"
         );
+
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void increaseFailedAttempts(
+            User user
+    ) {
+
+        int attempts =
+                user.getFailedLoginAttempts() + 1;
+
+        user.setFailedLoginAttempts(
+                attempts
+        );
+
+        if (attempts >=
+                SecurityConstants
+                        .MAX_FAILED_ATTEMPTS) {
+
+            user.setEnabled(false);
+
+            user.setLockedAt(
+                    LocalDateTime.now()
+            );
+
+            refreshTokenService
+                    .deleteByUser(user);
+
+
+            auditService.save(
+                    "SYSTEM",
+                    "AUTO_BLOCK",
+                    user.getUsername(),
+                    "Too many failed login attempts"
+            );
+        }
+
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void resetFailedAttempts(
+            User user
+    ) {
+
+        user.setFailedLoginAttempts(0);
 
         userRepository.save(user);
     }

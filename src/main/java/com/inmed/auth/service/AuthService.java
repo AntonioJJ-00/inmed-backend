@@ -8,6 +8,7 @@ import com.inmed.exception.custom.ResourceNotFoundException;
 import com.inmed.security.JwtService;
 import com.inmed.user.entity.User;
 import com.inmed.user.repository.UserRepository;
+import com.inmed.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,8 @@ public class AuthService {
     private final JwtService jwtService;
 
     private final LoginAuditService loginAuditService;
+
+    private final UserService userService;
 
     public AuthResponse login(LoginRequest request,
                               String ipAddress) {
@@ -55,6 +58,11 @@ public class AuthService {
 
         if (!matches) {
 
+            userService
+                    .increaseFailedAttempts(
+                            user
+                    );
+
             loginAuditService.register(
                     request.getUsername(),
                     "FAILED",
@@ -81,6 +89,10 @@ public class AuthService {
                 user.getUsername(),
                 "SUCCESS",
                 ipAddress
+        );
+
+        userService.resetFailedAttempts(
+                user
         );
 
         return AuthResponse.builder()
