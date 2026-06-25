@@ -27,7 +27,10 @@ public class AuthService {
 
     private final JwtService jwtService;
 
-    public AuthResponse login(LoginRequest request) {
+    private final LoginAuditService loginAuditService;
+
+    public AuthResponse login(LoginRequest request,
+                              String ipAddress) {
 
         User user = userRepository
                 .findByUsername(request.getUsername())
@@ -52,6 +55,12 @@ public class AuthService {
 
         if (!matches) {
 
+            loginAuditService.register(
+                    request.getUsername(),
+                    "FAILED",
+                    ipAddress
+            );
+
             throw new ResourceNotFoundException(
                     "Invalid username or password"
             );
@@ -67,6 +76,12 @@ public class AuthService {
                 refreshTokenService
                         .createRefreshToken(user)
                         .getToken();
+
+        loginAuditService.register(
+                user.getUsername(),
+                "SUCCESS",
+                ipAddress
+        );
 
         return AuthResponse.builder()
                 .accessToken(accessToken)
