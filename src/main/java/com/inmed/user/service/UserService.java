@@ -14,6 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import com.inmed.user.dto.UserStatusRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+
+import com.inmed.audit.service.AuditService;
 
 import java.util.List;
 
@@ -24,6 +28,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenService refreshTokenService;
+
+    private final AuditService auditService;
 
     public UserResponse createUser(CreateUserRequest request) {
 
@@ -81,9 +87,23 @@ public class UserService {
                                 )
                         );
 
+        Authentication auth =
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
+
+        String admin = auth.getName();
+
         user.setEnabled(false);
 
         refreshTokenService.deleteByUser(user);
+
+        auditService.save(
+                admin,
+                "BLOCK",
+                user.getUsername(),
+                "Blocked by administrator"
+        );
 
         userRepository.save(user);
     }
@@ -102,9 +122,22 @@ public class UserService {
                                 )
                         );
 
+        Authentication auth =
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
+
+        String admin = auth.getName();
+
         user.setEnabled(true);
+
+        auditService.save(
+                admin,
+                "UNBLOCK",
+                user.getUsername(),
+                "Unblocked by administrator"
+        );
 
         userRepository.save(user);
     }
 }
-
