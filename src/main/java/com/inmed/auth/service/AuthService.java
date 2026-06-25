@@ -5,9 +5,11 @@ import com.inmed.auth.dto.LoginRequest;
 import com.inmed.auth.entity.RefreshToken;
 import com.inmed.exception.custom.InvalidRefreshTokenException;
 import com.inmed.exception.custom.ResourceNotFoundException;
+import com.inmed.exception.custom.UserBlockedException;
 import com.inmed.security.JwtService;
 import com.inmed.user.entity.User;
 import com.inmed.user.repository.UserRepository;
+import com.inmed.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,8 @@ public class AuthService {
 
     private final LoginAuditService loginAuditService;
 
+    private final UserService userService;
+
     public AuthResponse login(LoginRequest request,
                               String ipAddress) {
 
@@ -42,9 +46,19 @@ public class AuthService {
 
         // MODIFICACIÓN AQUÍ: Lanzamos tu excepción personalizada
         if (!Boolean.TRUE.equals(user.getEnabled())) {
-            throw new com.inmed.exception.custom.UserBlockedException(
-                    "User is blocked"
-            );
+
+            boolean unlocked =
+                    userService
+                            .unlockWhenLockExpired(
+                                    user
+                            );
+
+            if (!unlocked) {
+
+                throw new UserBlockedException(
+                        "User is blocked"
+                );
+            }
         }
 
         boolean matches =
@@ -54,6 +68,11 @@ public class AuthService {
                 );
 
         if (!matches) {
+
+            userService
+                    .increaseFailedAttempts(
+                            user
+                    );
 
             loginAuditService.register(
                     request.getUsername(),
@@ -81,6 +100,10 @@ public class AuthService {
                 user.getUsername(),
                 "SUCCESS",
                 ipAddress
+        );
+
+        userService.resetFailedAttempts(
+                user
         );
 
         return AuthResponse.builder()

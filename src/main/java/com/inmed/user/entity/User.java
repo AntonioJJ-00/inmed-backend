@@ -75,6 +75,12 @@ public class User {
     )
     private LocalDateTime updatedAt;
 
+    @Column(nullable = false)
+    private Integer failedLoginAttempts;
+
+    @Column
+    private LocalDateTime lockedAt;
+
     @PrePersist
     protected void onCreate() {
 
@@ -84,6 +90,10 @@ public class User {
         if (this.enabled == null) {
             this.enabled = true;
         }
+
+        if (this.failedLoginAttempts == null) {
+            this.failedLoginAttempts = 0;
+        }
     }
 
     @PreUpdate
@@ -91,3 +101,4 @@ public class User {
         this.updatedAt = LocalDateTime.now();
     }
 }
+
