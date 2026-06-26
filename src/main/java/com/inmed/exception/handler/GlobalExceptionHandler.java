@@ -1,10 +1,7 @@
 package com.inmed.exception.handler;
 
 import com.inmed.common.response.ApiErrorResponse;
-import com.inmed.exception.custom.DuplicateResourceException;
-import com.inmed.exception.custom.InvalidRefreshTokenException;
-import com.inmed.exception.custom.ResourceNotFoundException;
-import com.inmed.exception.custom.UserBlockedException; // Importamos la nueva excepción
+import com.inmed.exception.custom.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -69,5 +66,39 @@ public class GlobalExceptionHandler {
                 .message(ex.getMessage())
                 .timestamp(LocalDateTime.now())
                 .build();
+    }
+
+    @ExceptionHandler(WeakPasswordException.class)
+    public ResponseEntity<ApiErrorResponse> handleWeakPassword(
+            WeakPasswordException ex
+    ) {
+
+        ApiErrorResponse response =
+                ApiErrorResponse.builder()
+                        .status(HttpStatus.BAD_REQUEST.value())
+                        .message(ex.getMessage())
+                        .timestamp(LocalDateTime.now())
+                        .build();
+
+        return ResponseEntity
+                .badRequest()
+                .body(response);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiErrorResponse> handleIllegalArgument(
+            IllegalArgumentException ex
+    ) {
+
+        ApiErrorResponse response =
+                ApiErrorResponse.builder()
+                        .status(HttpStatus.BAD_REQUEST.value())
+                        .message(ex.getMessage())
+                        .timestamp(LocalDateTime.now())
+                        .build();
+
+        return ResponseEntity
+                .badRequest()
+                .body(response);
     }
 }

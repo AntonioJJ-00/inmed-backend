@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import com.inmed.user.dto.UserStatusRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import com.inmed.user.dto.ChangePasswordRequest;
 
 import java.util.List;
 
@@ -69,5 +71,21 @@ public class UserController {
         );
 
         return "User unblocked";
+    }
+
+    @PostMapping("/change-password")
+    public String changePassword(
+            Authentication authentication,
+            @Valid
+            @RequestBody ChangePasswordRequest request
+    ) {
+
+        userService.changePassword(
+                authentication.getName(),
+                request.getCurrentPassword(),
+                request.getNewPassword()
+        );
+
+        return "Password changed successfully";
     }
 }
