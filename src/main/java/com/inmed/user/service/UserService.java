@@ -3,6 +3,8 @@ package com.inmed.user.service;
 import com.inmed.auth.service.RefreshTokenService;
 import com.inmed.exception.custom.DuplicateResourceException;
 import com.inmed.exception.custom.ResourceNotFoundException;
+import com.inmed.exception.custom.WeakPasswordException;
+import com.inmed.security.PasswordPolicyValidator;
 import com.inmed.user.dto.CreateUserRequest;
 import com.inmed.user.dto.UserResponse;
 import com.inmed.user.entity.User;
@@ -28,7 +30,6 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenService refreshTokenService;
-
     private final AuditService auditService;
 
     public UserResponse createUser(CreateUserRequest request) {
@@ -37,6 +38,13 @@ public class UserService {
 
             throw new DuplicateResourceException(
                     "Username already exists"
+            );
+        }
+
+        if (!PasswordPolicyValidator.isValid(request.getPassword())) {
+
+            throw new WeakPasswordException(
+                    "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number and one special character."
             );
         }
 
@@ -228,6 +236,61 @@ public class UserService {
         }
 
         return false;
+    }
+
+    @Transactional
+    public void changePassword(
+            String username,
+            String currentPassword,
+            String newPassword
+    ) {
+
+        User user =
+                userRepository
+                        .findByUsername(username)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "User not found"
+                                )
+                        );
+
+        boolean matches =
+                passwordEncoder.matches(
+                        currentPassword,
+                        user.getPassword()
+                );
+
+        if (!matches) {
+
+            throw new IllegalArgumentException(
+                    "Current password is incorrect"
+            );
+        }
+
+        // Validar la nueva contraseña antes de guardarla
+        if (!PasswordPolicyValidator.isValid(newPassword)) {
+
+            throw new WeakPasswordException(
+                    "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number and one special character."
+            );
+        }
+
+        user.setPassword(
+                passwordEncoder.encode(
+                        newPassword
+                )
+        );
+
+        refreshTokenService.deleteByUser(user);
+
+        auditService.save(
+                username,
+                "CHANGE_PASSWORD",
+                username,
+                "Password changed"
+        );
+
+        userRepository.save(user);
     }
 
 }
