@@ -1,6 +1,7 @@
 package com.inmed.exception.handler;
 
 import com.inmed.common.response.ApiErrorResponse;
+import com.inmed.common.response.ValidationErrorResponse;
 import com.inmed.exception.custom.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -8,6 +9,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.time.LocalDateTime;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+
+import java.util.List;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -94,6 +98,35 @@ public class GlobalExceptionHandler {
                 ApiErrorResponse.builder()
                         .status(HttpStatus.BAD_REQUEST.value())
                         .message(ex.getMessage())
+                        .timestamp(LocalDateTime.now())
+                        .build();
+
+        return ResponseEntity
+                .badRequest()
+                .body(response);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ValidationErrorResponse> handleValidationErrors(
+            MethodArgumentNotValidException ex
+    ) {
+
+        List<String> errors =
+                ex.getBindingResult()
+                        .getFieldErrors()
+                        .stream()
+                        .map(error ->
+                                error.getField()
+                                        + ": "
+                                        + error.getDefaultMessage()
+                        )
+                        .toList();
+
+        ValidationErrorResponse response =
+                ValidationErrorResponse.builder()
+                        .status(HttpStatus.BAD_REQUEST.value())
+                        .message("Validation failed")
+                        .errors(errors)
                         .timestamp(LocalDateTime.now())
                         .build();
 

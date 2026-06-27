@@ -1,5 +1,6 @@
 package com.inmed.audit.controller;
 
+import com.inmed.audit.dto.AuditLogResponse;
 import com.inmed.audit.entity.AuditLog;
 import com.inmed.audit.repository.AuditLogRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,8 +18,19 @@ public class AuditController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
-    public List<AuditLog> getLogs() {
+    public List<AuditLogResponse> getLogs() {
 
-        return auditLogRepository.findAll();
+        return auditLogRepository.findAll()
+                .stream()
+                .map(log -> AuditLogResponse.builder()
+                        .id(log.getId())
+                        .adminUsername(log.getAdminUsername())
+                        .action(log.getAction())
+                        .targetUsername(log.getTargetUsername())
+                        .reason(log.getReason())
+                        .createdAt(log.getCreatedAt())
+                        .build()
+                )
+                .toList();
     }
 }

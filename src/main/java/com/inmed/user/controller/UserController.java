@@ -10,6 +10,7 @@ import com.inmed.user.dto.UserStatusRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import com.inmed.user.dto.ChangePasswordRequest;
+import com.inmed.user.dto.UpdateUserRequest;
 
 import java.util.List;
 
@@ -20,6 +21,7 @@ public class UserController {
 
     private final UserService userService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public UserResponse createUser(
             @Valid @RequestBody CreateUserRequest request
@@ -28,16 +30,43 @@ public class UserController {
         return userService.createUser(request);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public List<UserResponse> getAllUsers() {
         return userService.getAllUsers();
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
     public UserResponse getUserById(
             @PathVariable Long id
     ) {
         return userService.getUserById(id);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/{id}")
+    public UserResponse updateUser(
+            @PathVariable Long id,
+            @Valid
+            @RequestBody UpdateUserRequest request
+    ) {
+
+        return userService.updateUser(
+                id,
+                request
+        );
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{id}")
+    public String deleteUser(
+            @PathVariable Long id
+    ) {
+
+        userService.deleteUser(id);
+
+        return "User deleted successfully";
     }
 
     @GetMapping("/test")

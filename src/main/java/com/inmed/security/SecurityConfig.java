@@ -27,12 +27,24 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
+                .headers(headers -> headers
+                        .frameOptions(frame -> frame.deny())
+                        .xssProtection(xss -> xss.disable())
+                        .contentTypeOptions(contentType -> {})
+                        .httpStrictTransportSecurity(hsts -> hsts
+                                .includeSubDomains(true)
+                                .maxAgeInSeconds(31536000)
+                        )
+                        .contentSecurityPolicy(csp -> csp
+                                .policyDirectives("default-src 'self'")
+                        )
+                )
                 .authorizeHttpRequests(auth -> auth
 
                         // público
                         .requestMatchers("/api/auth/**").permitAll()
 
-                        // TODO lo demás protegido
+                        // todo lo demás protegido
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(
