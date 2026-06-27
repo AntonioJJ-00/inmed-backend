@@ -84,8 +84,18 @@ public class AuthController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/login-history")
-    public List<LoginAudit> getLoginHistory() {
+    public List<LoginAuditResponse> getLoginHistory() {
 
-        return loginAuditRepository.findAll();
+        return loginAuditRepository.findAll()
+                .stream()
+                .map(audit -> LoginAuditResponse.builder()
+                        .id(audit.getId())
+                        .username(audit.getUsername())
+                        .status(audit.getStatus())
+                        .ipAddress(audit.getIpAddress())
+                        .createdAt(audit.getCreatedAt().toString())
+                        .build()
+                )
+                .toList();
     }
 }
