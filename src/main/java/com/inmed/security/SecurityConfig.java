@@ -1,5 +1,6 @@
 package com.inmed.security;
 
+import com.inmed.security.ratelimit.LoginRateLimitFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,35 +19,69 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    private final LoginRateLimitFilter loginRateLimitFilter;
+
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http
+    ) throws Exception {
 
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> {})
+
+                .cors(cors -> {
+                })
+
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                        session.sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS
+                        )
                 )
+
                 .headers(headers -> headers
-                        .frameOptions(frame -> frame.deny())
-                        .xssProtection(xss -> xss.disable())
-                        .contentTypeOptions(contentType -> {})
-                        .httpStrictTransportSecurity(hsts -> hsts
-                                .includeSubDomains(true)
-                                .maxAgeInSeconds(31536000)
+
+                        .frameOptions(frame ->
+                                frame.deny()
                         )
-                        .contentSecurityPolicy(csp -> csp
-                                .policyDirectives("default-src 'self'")
+
+                        .xssProtection(xss ->
+                                xss.disable()
+                        )
+
+                        .contentTypeOptions(contentType -> {
+                        })
+
+                        .httpStrictTransportSecurity(hsts ->
+                                hsts
+                                        .includeSubDomains(true)
+                                        .maxAgeInSeconds(31536000)
+                        )
+
+                        .contentSecurityPolicy(csp ->
+                                csp.policyDirectives(
+                                        "default-src 'self'"
+                                )
                         )
                 )
+
                 .authorizeHttpRequests(auth -> auth
 
-                        // público
-                        .requestMatchers("/api/auth/**").permitAll()
+                        // Endpoints públicos
+                        .requestMatchers("/api/auth/**")
+                        .permitAll()
 
-                        // todo lo demás protegido
-                        .anyRequest().authenticated()
+                        // Todo lo demás requiere autenticación
+                        .anyRequest()
+                        .authenticated()
                 )
+
+                // Rate Limit
+                .addFilterBefore(
+                        loginRateLimitFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                )
+
+                // JWT
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
@@ -59,6 +94,8 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration configuration
     ) throws Exception {
+
         return configuration.getAuthenticationManager();
     }
+
 }
