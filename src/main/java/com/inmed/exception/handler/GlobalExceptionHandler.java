@@ -134,4 +134,20 @@ public class GlobalExceptionHandler {
                 .badRequest()
                 .body(response);
     }
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<ApiErrorResponse> handleTooManyRequests(
+            TooManyRequestsException ex
+    ) {
+
+        ApiErrorResponse response =
+                ApiErrorResponse.builder()
+                        .status(HttpStatus.TOO_MANY_REQUESTS.value())
+                        .message(ex.getMessage())
+                        .timestamp(LocalDateTime.now())
+                        .build();
+
+        return ResponseEntity
+                .status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(response);
+    }
 }
