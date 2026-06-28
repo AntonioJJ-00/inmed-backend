@@ -1,15 +1,17 @@
 package com.inmed.auth.controller;
 
 import com.inmed.auth.dto.*;
-import com.inmed.auth.entity.LoginAudit;
 import com.inmed.auth.repository.LoginAuditRepository;
 import com.inmed.auth.service.AuthService;
+import com.inmed.common.response.ApiResponse;
+import com.inmed.common.response.ResponseFactory;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
-import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -20,34 +22,44 @@ public class AuthController {
     private final LoginAuditRepository loginAuditRepository;
 
     @PostMapping("/login")
-    public AuthResponse login(
+    public ApiResponse<AuthResponse> login(
             @Valid
             @RequestBody LoginRequest request,
             HttpServletRequest servletRequest
     ) {
 
-        String ip =
-                servletRequest.getRemoteAddr();
+        String ip = servletRequest.getRemoteAddr();
 
-        return authService.login(
-                request,
-                ip
+        AuthResponse response =
+                authService.login(
+                        request,
+                        ip
+                );
+
+        return ResponseFactory.success(
+                "Login successful",
+                response
         );
     }
 
     @PostMapping("/refresh")
-    public AuthResponse refreshToken(
-            @RequestBody
-            RefreshRequest request
+    public ApiResponse<AuthResponse> refreshToken(
+            @RequestBody RefreshRequest request
     ) {
 
-        return authService.refreshToken(
-                request.getRefreshToken()
+        AuthResponse response =
+                authService.refreshToken(
+                        request.getRefreshToken()
+                );
+
+        return ResponseFactory.success(
+                "Token refreshed successfully",
+                response
         );
     }
 
     @PostMapping("/logout")
-    public String logout(
+    public ApiResponse<Void> logout(
             @RequestBody LogoutRequest request
     ) {
 
@@ -55,47 +67,58 @@ public class AuthController {
                 request.getRefreshToken()
         );
 
-        return "Logout successful";
+        return ResponseFactory.success(
+                "Logout successful"
+        );
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/sessions")
-    public List<ActiveSessionResponse>
-    getSessions() {
+    public ApiResponse<List<ActiveSessionResponse>> getSessions() {
 
-        return authService
-                .getActiveSessions();
+        return ResponseFactory.success(
+                "Active sessions retrieved successfully",
+                authService.getActiveSessions()
+        );
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/force-logout")
-    public String forceLogout(
+    public ApiResponse<Void> forceLogout(
             @Valid
-            @RequestBody
-            ForceLogoutRequest request
+            @RequestBody ForceLogoutRequest request
     ) {
 
         authService.forceLogout(
                 request.getUsername()
         );
 
-        return "User session terminated";
+        return ResponseFactory.success(
+                "User session terminated"
+        );
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/login-history")
-    public List<LoginAuditResponse> getLoginHistory() {
+    public ApiResponse<List<LoginAuditResponse>> getLoginHistory() {
 
-        return loginAuditRepository.findAll()
-                .stream()
-                .map(audit -> LoginAuditResponse.builder()
-                        .id(audit.getId())
-                        .username(audit.getUsername())
-                        .status(audit.getStatus())
-                        .ipAddress(audit.getIpAddress())
-                        .createdAt(audit.getCreatedAt().toString())
-                        .build()
-                )
-                .toList();
+        List<LoginAuditResponse> response =
+                loginAuditRepository.findAll()
+                        .stream()
+                        .map(audit ->
+                                LoginAuditResponse.builder()
+                                        .id(audit.getId())
+                                        .username(audit.getUsername())
+                                        .status(audit.getStatus())
+                                        .ipAddress(audit.getIpAddress())
+                                        .createdAt(audit.getCreatedAt().toString())
+                                        .build()
+                        )
+                        .toList();
+
+        return ResponseFactory.success(
+                "Login history retrieved successfully",
+                response
+        );
     }
 }

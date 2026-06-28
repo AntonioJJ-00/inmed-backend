@@ -1,6 +1,7 @@
 package com.inmed.exception.handler;
 
 import com.inmed.common.response.ApiErrorResponse;
+import com.inmed.common.response.ResponseFactory;
 import com.inmed.common.response.ValidationErrorResponse;
 import com.inmed.exception.custom.*;
 import org.springframework.http.HttpStatus;
@@ -36,28 +37,30 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleDuplicateResource(
             DuplicateResourceException ex
     ) {
-        ApiErrorResponse response =
-                ApiErrorResponse.builder()
-                        .status(HttpStatus.CONFLICT.value())
-                        .message(ex.getMessage())
-                        .timestamp(LocalDateTime.now())
-                        .build();
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(response);
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(
+                        ResponseFactory.error(
+                                HttpStatus.CONFLICT.value(),
+                                ex.getMessage()
+                        )
+                );
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleNotFound(
             ResourceNotFoundException ex
     ) {
-        ApiErrorResponse response =
-                ApiErrorResponse.builder()
-                        .status(HttpStatus.NOT_FOUND.value())
-                        .message(ex.getMessage())
-                        .timestamp(LocalDateTime.now())
-                        .build();
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(response);
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(
+                        ResponseFactory.error(
+                                HttpStatus.NOT_FOUND.value(),
+                                ex.getMessage()
+                        )
+                );
     }
 
     @ExceptionHandler(InvalidRefreshTokenException.class)
@@ -134,20 +137,19 @@ public class GlobalExceptionHandler {
                 .badRequest()
                 .body(response);
     }
+
     @ExceptionHandler(TooManyRequestsException.class)
     public ResponseEntity<ApiErrorResponse> handleTooManyRequests(
             TooManyRequestsException ex
     ) {
 
-        ApiErrorResponse response =
-                ApiErrorResponse.builder()
-                        .status(HttpStatus.TOO_MANY_REQUESTS.value())
-                        .message(ex.getMessage())
-                        .timestamp(LocalDateTime.now())
-                        .build();
-
         return ResponseEntity
                 .status(HttpStatus.TOO_MANY_REQUESTS)
-                .body(response);
+                .body(
+                        ResponseFactory.error(
+                                HttpStatus.TOO_MANY_REQUESTS.value(),
+                                ex.getMessage()
+                        )
+                );
     }
 }

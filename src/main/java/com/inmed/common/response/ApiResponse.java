@@ -7,15 +7,13 @@ import java.time.LocalDateTime;
 
 @Getter
 @Builder
-public class ApiErrorResponse {
+public class ApiResponse<T> {
 
     private boolean success;
 
-    private Integer status;
-
     private String message;
 
-    private Object data;
+    private T data;
 
     private LocalDateTime timestamp;
 }

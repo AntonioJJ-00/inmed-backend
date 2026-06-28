@@ -1,12 +1,15 @@
 package com.inmed.audit.controller;
 
-import com.inmed.audit.dto.AuditLogResponse;
-import com.inmed.audit.entity.AuditLog;
+import com.inmed.audit.dto.AuditResponse;
+import com.inmed.audit.mapper.AuditMapper;
 import com.inmed.audit.repository.AuditLogRepository;
+import com.inmed.common.response.ApiSuccessResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -18,19 +21,22 @@ public class AuditController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
-    public List<AuditLogResponse> getLogs() {
+    public ResponseEntity<ApiSuccessResponse<List<AuditResponse>>> getLogs() {
 
-        return auditLogRepository.findAll()
-                .stream()
-                .map(log -> AuditLogResponse.builder()
-                        .id(log.getId())
-                        .adminUsername(log.getAdminUsername())
-                        .action(log.getAction())
-                        .targetUsername(log.getTargetUsername())
-                        .reason(log.getReason())
-                        .createdAt(log.getCreatedAt())
+        List<AuditResponse> logs =
+                auditLogRepository.findAll()
+                        .stream()
+                        .map(AuditMapper::toResponse)
+                        .toList();
+
+        return ResponseEntity.ok(
+                ApiSuccessResponse.<List<AuditResponse>>builder()
+                        .success(true)
+                        .message("Audit logs retrieved successfully")
+                        .data(logs)
+                        .timestamp(LocalDateTime.now())
                         .build()
-                )
-                .toList();
+        );
     }
+
 }
