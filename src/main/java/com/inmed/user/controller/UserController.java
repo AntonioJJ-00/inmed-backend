@@ -1,17 +1,16 @@
 package com.inmed.user.controller;
 
-import com.inmed.user.dto.CreateUserRequest;
-import com.inmed.user.dto.UserResponse;
+import com.inmed.common.response.ApiSuccessResponse;
+import com.inmed.user.dto.*;
 import com.inmed.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
-import com.inmed.user.dto.UserStatusRequest;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import com.inmed.user.dto.ChangePasswordRequest;
-import com.inmed.user.dto.UpdateUserRequest;
+import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -23,90 +22,109 @@ public class UserController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public UserResponse createUser(
+    public ResponseEntity<ApiSuccessResponse<UserResponse>> createUser(
             @Valid @RequestBody CreateUserRequest request
     ) {
 
-        return userService.createUser(request);
+        UserResponse user = userService.createUser(request);
+
+        return ResponseEntity.ok(
+                ApiSuccessResponse.<UserResponse>builder()
+                        .success(true)
+                        .message("User created successfully")
+                        .data(user)
+                        .timestamp(LocalDateTime.now())
+                        .build()
+        );
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
-    public List<UserResponse> getAllUsers() {
-        return userService.getAllUsers();
+    public ResponseEntity<ApiSuccessResponse<List<UserResponse>>> getAllUsers() {
+
+        List<UserResponse> users = userService.getAllUsers();
+
+        return ResponseEntity.ok(
+                ApiSuccessResponse.<List<UserResponse>>builder()
+                        .success(true)
+                        .message("Users retrieved successfully")
+                        .data(users)
+                        .timestamp(LocalDateTime.now())
+                        .build()
+        );
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
-    public UserResponse getUserById(
+    public ResponseEntity<ApiSuccessResponse<UserResponse>> getUserById(
             @PathVariable Long id
     ) {
-        return userService.getUserById(id);
-    }
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @PatchMapping("/{id}")
-    public UserResponse updateUser(
-            @PathVariable Long id,
-            @Valid
-            @RequestBody UpdateUserRequest request
-    ) {
+        UserResponse user = userService.getUserById(id);
 
-        return userService.updateUser(
-                id,
-                request
+        return ResponseEntity.ok(
+                ApiSuccessResponse.<UserResponse>builder()
+                        .success(true)
+                        .message("User retrieved successfully")
+                        .data(user)
+                        .timestamp(LocalDateTime.now())
+                        .build()
         );
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping("/{id}")
-    public String deleteUser(
-            @PathVariable Long id
-    ) {
-
-        userService.deleteUser(id);
-
-        return "User deleted successfully";
-    }
-
     @GetMapping("/test")
-    public String test() {
-        return "Backend funcionando";
+    public ResponseEntity<ApiSuccessResponse<String>> test() {
+
+        return ResponseEntity.ok(
+                ApiSuccessResponse.<String>builder()
+                        .success(true)
+                        .message("Backend running")
+                        .data("Backend funcionando")
+                        .timestamp(LocalDateTime.now())
+                        .build()
+        );
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/block")
-    public String blockUser(
-            @Valid
-            @RequestBody UserStatusRequest request
+    public ResponseEntity<ApiSuccessResponse<Void>> blockUser(
+            @Valid @RequestBody UserStatusRequest request
     ) {
 
-        userService.blockUser(
-                request.getUsername()
-        );
+        userService.blockUser(request.getUsername());
 
-        return "User blocked";
+        return ResponseEntity.ok(
+                ApiSuccessResponse.<Void>builder()
+                        .success(true)
+                        .message("User blocked successfully")
+                        .data(null)
+                        .timestamp(LocalDateTime.now())
+                        .build()
+        );
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/unblock")
-    public String unblockUser(
-            @Valid
-            @RequestBody UserStatusRequest request
+    public ResponseEntity<ApiSuccessResponse<Void>> unblockUser(
+            @Valid @RequestBody UserStatusRequest request
     ) {
 
-        userService.unblockUser(
-                request.getUsername()
-        );
+        userService.unblockUser(request.getUsername());
 
-        return "User unblocked";
+        return ResponseEntity.ok(
+                ApiSuccessResponse.<Void>builder()
+                        .success(true)
+                        .message("User unblocked successfully")
+                        .data(null)
+                        .timestamp(LocalDateTime.now())
+                        .build()
+        );
     }
 
     @PostMapping("/change-password")
-    public String changePassword(
+    public ResponseEntity<ApiSuccessResponse<Void>> changePassword(
             Authentication authentication,
-            @Valid
-            @RequestBody ChangePasswordRequest request
+            @Valid @RequestBody ChangePasswordRequest request
     ) {
 
         userService.changePassword(
@@ -115,6 +133,13 @@ public class UserController {
                 request.getNewPassword()
         );
 
-        return "Password changed successfully";
+        return ResponseEntity.ok(
+                ApiSuccessResponse.<Void>builder()
+                        .success(true)
+                        .message("Password changed successfully")
+                        .data(null)
+                        .timestamp(LocalDateTime.now())
+                        .build()
+        );
     }
 }
