@@ -8,6 +8,6 @@ import lombok.Setter;
 @Setter
 public class UserStatusRequest {
 
-    @NotBlank
+    @NotBlank(message="Username is required")
     private String username;
 }

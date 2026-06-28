@@ -10,18 +10,18 @@ import lombok.Setter;
 @Setter
 public class RegisterRequest {
 
-    @NotBlank
+    @NotBlank(message="First name is required")
     private String firstName;
 
-    @NotBlank
+    @NotBlank(message="Last name is required")
     private String lastName;
 
-    @NotBlank
+    @NotBlank(message="Username is required")
     private String username;
 
-    @NotBlank
+    @NotBlank(message="Password is required")
     private String password;
 
-    @NotNull
+    @NotNull(message="Role is required")
     private Role role;
 }

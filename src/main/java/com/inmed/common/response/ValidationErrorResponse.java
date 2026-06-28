@@ -4,18 +4,19 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.Map;
 
 @Getter
 @Builder
 public class ValidationErrorResponse {
 
+    private boolean success;
+
     private Integer status;
 
     private String message;
 
-    private List<String> errors;
+    private Map<String, String> errors;
 
     private LocalDateTime timestamp;
-
 }

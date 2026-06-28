@@ -11,7 +11,10 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.time.LocalDateTime;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 
 @RestControllerAdvice
@@ -114,19 +117,21 @@ public class GlobalExceptionHandler {
             MethodArgumentNotValidException ex
     ) {
 
-        List<String> errors =
-                ex.getBindingResult()
-                        .getFieldErrors()
-                        .stream()
-                        .map(error ->
-                                error.getField()
-                                        + ": "
-                                        + error.getDefaultMessage()
+        Map<String, String> errors =
+                new HashMap<>();
+
+        ex.getBindingResult()
+                .getFieldErrors()
+                .forEach(error ->
+                        errors.put(
+                                error.getField(),
+                                error.getDefaultMessage()
                         )
-                        .toList();
+                );
 
         ValidationErrorResponse response =
                 ValidationErrorResponse.builder()
+                        .success(false)
                         .status(HttpStatus.BAD_REQUEST.value())
                         .message("Validation failed")
                         .errors(errors)

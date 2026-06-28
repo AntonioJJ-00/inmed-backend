@@ -8,7 +8,7 @@ import lombok.Setter;
 @Setter
 public class AuditRequest {
 
-    @NotBlank
+    @NotBlank(message="Username is required")
     private String username;
 
     private String reason;

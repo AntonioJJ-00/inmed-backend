@@ -8,6 +8,6 @@ import lombok.Setter;
 @Setter
 public class ForceLogoutRequest {
 
-    @NotBlank
+    @NotBlank(message="Username is required")
     private String username;
 }
