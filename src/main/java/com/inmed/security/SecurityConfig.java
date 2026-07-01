@@ -11,6 +11,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import com.inmed.common.filter.CorrelationIdFilter;
 
 @Configuration
 @EnableMethodSecurity
@@ -18,8 +19,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-
     private final LoginRateLimitFilter loginRateLimitFilter;
+    private final CorrelationIdFilter correlationIdFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(
@@ -78,6 +79,15 @@ public class SecurityConfig {
                 // Rate Limit
                 .addFilterBefore(
                         loginRateLimitFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                )
+
+                .addFilterBefore(
+                        correlationIdFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                )
+                .addFilterBefore(
+                        jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
                 )
 
