@@ -18,102 +18,60 @@ public class RefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
 
+
     @Transactional
-    public RefreshToken createRefreshToken(
-            User user
-    ) {
+    public RefreshToken createRefreshToken(User user) {
 
         refreshTokenRepository.deleteByUser(user);
 
         refreshTokenRepository.flush();
 
-        RefreshToken refreshToken =
-                RefreshToken.builder()
-                        .user(user)
-                        .token(
-                                UUID.randomUUID().toString()
-                        )
-                        .expiryDate(
-                                LocalDateTime.now()
-                                        .plusDays(7)
-                        )
-                        .build();
+        RefreshToken refreshToken = RefreshToken.builder()
+                .user(user)
+                .token(UUID.randomUUID().toString())
+                .expiryDate(LocalDateTime.now().plusDays(7))
+                .familyId(UUID.randomUUID().toString()) // ✅ FIX
+                .version(1) // ✅ FIX
+                .revoked(false)
+                .build();
 
-        return refreshTokenRepository.save(
-                refreshToken
-        );
+        return refreshTokenRepository.save(refreshToken);
     }
 
-    public RefreshToken findByToken(
-            String token
-    ) {
+    // ✅ FIX CRÍTICO: fetch join para evitar LazyInitializationException
+    @Transactional(readOnly = true)
+    public RefreshToken findByToken(String token) {
 
         return refreshTokenRepository
-                .findByToken(token)
+                .findByTokenWithUser(token)
                 .orElseThrow(() ->
-                        new InvalidRefreshTokenException(
-                                "Refresh token not found"
-                        )
+                        new InvalidRefreshTokenException("Refresh token not found")
                 );
     }
 
-    public RefreshToken findByUser(
-            User user
-    ) {
-
-        return refreshTokenRepository
-                .findByUser(user)
-                .orElseThrow(() ->
-                        new InvalidRefreshTokenException(
-                                "Refresh token not found"
-                        )
-                );
-    }
-
-    public boolean isValid(
-            RefreshToken refreshToken
-    ) {
-
-        return refreshToken
-                .getExpiryDate()
-                .isAfter(
-                        LocalDateTime.now()
-                );
+    @Transactional(readOnly = true)
+    public boolean isValid(RefreshToken refreshToken) {
+        return refreshToken.getExpiryDate().isAfter(LocalDateTime.now());
     }
 
     @Transactional
-    public void delete(
-            RefreshToken refreshToken
-    ) {
-
-        refreshTokenRepository.delete(
-                refreshToken
-        );
+    public void delete(RefreshToken refreshToken) {
+        refreshTokenRepository.delete(refreshToken);
     }
 
     @Transactional
-    public void deleteByUser(
-            User user
-    ) {
-
-        refreshTokenRepository
-                .findByUser(user)
-                .ifPresent(
-                        refreshTokenRepository::delete
-                );
+    public void deleteByUser(User user) {
+        refreshTokenRepository.deleteByUser(user);
     }
 
     @Transactional
-    public void deleteByToken(
-            String token
-    ) {
-
-        refreshTokenRepository
-                .deleteByToken(token);
+    public void deleteByToken(String token) {
+        refreshTokenRepository.deleteByToken(token);
     }
 
+    @Transactional(readOnly = true)
     public List<RefreshToken> findAll() {
-
-        return refreshTokenRepository.findAll();
+        return refreshTokenRepository.findAllWithUser();
     }
+
 }

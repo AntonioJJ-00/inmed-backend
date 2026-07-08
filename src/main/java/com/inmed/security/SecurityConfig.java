@@ -4,6 +4,7 @@ import com.inmed.security.ratelimit.LoginRateLimitFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -16,6 +17,7 @@ import com.inmed.common.filter.CorrelationIdFilter;
 @Configuration
 @EnableMethodSecurity
 @RequiredArgsConstructor
+@EnableAspectJAutoProxy
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -84,10 +86,6 @@ public class SecurityConfig {
 
                 .addFilterBefore(
                         correlationIdFilter,
-                        UsernamePasswordAuthenticationFilter.class
-                )
-                .addFilterBefore(
-                        jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
                 )
 

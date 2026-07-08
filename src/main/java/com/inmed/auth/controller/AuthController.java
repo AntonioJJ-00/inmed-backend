@@ -1,6 +1,7 @@
 package com.inmed.auth.controller;
 
 import com.inmed.auth.dto.*;
+import com.inmed.auth.facade.AuthFacade;
 import com.inmed.auth.repository.LoginAuditRepository;
 import com.inmed.auth.service.AuthService;
 import com.inmed.common.response.ApiResponse;
@@ -18,7 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthService authService;
+    private final AuthFacade authFacade;
     private final LoginAuditRepository loginAuditRepository;
 
     @PostMapping("/login")
@@ -31,7 +32,7 @@ public class AuthController {
         String ip = servletRequest.getRemoteAddr();
 
         AuthResponse response =
-                authService.login(
+                authFacade.login(
                         request,
                         ip
                 );
@@ -48,7 +49,7 @@ public class AuthController {
     ) {
 
         AuthResponse response =
-                authService.refreshToken(
+                authFacade.refreshToken(
                         request.getRefreshToken()
                 );
 
@@ -60,16 +61,15 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ApiResponse<Void> logout(
-            @RequestBody LogoutRequest request
+            @RequestBody LogoutRequest request,
+            @RequestHeader("Authorization") String authHeader
     ) {
-
-        authService.logout(
-                request.getRefreshToken()
+        String token = authHeader.substring(7);
+        authFacade.logout(
+                request.getRefreshToken(),
+                token
         );
-
-        return ResponseFactory.success(
-                "Logout successful"
-        );
+        return ResponseFactory.success("Logout successful");
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -78,7 +78,7 @@ public class AuthController {
 
         return ResponseFactory.success(
                 "Active sessions retrieved successfully",
-                authService.getActiveSessions()
+                authFacade.getActiveSessions()
         );
     }
 
@@ -89,7 +89,7 @@ public class AuthController {
             @RequestBody ForceLogoutRequest request
     ) {
 
-        authService.forceLogout(
+        authFacade.forceLogout(
                 request.getUsername()
         );
 

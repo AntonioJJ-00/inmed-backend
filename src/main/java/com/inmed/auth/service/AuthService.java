@@ -1,202 +1,72 @@
 package com.inmed.auth.service;
 
-import com.inmed.auth.dto.AuthResponse;
-import com.inmed.auth.dto.LoginRequest;
-import com.inmed.auth.entity.RefreshToken;
-import com.inmed.exception.custom.InvalidRefreshTokenException;
-import com.inmed.exception.custom.ResourceNotFoundException;
-import com.inmed.exception.custom.UserBlockedException;
+import com.inmed.auth.dto.*;
 import com.inmed.security.JwtService;
+import com.inmed.security.blacklist.JwtBlacklistService;
 import com.inmed.user.entity.User;
 import com.inmed.user.repository.UserRepository;
-import com.inmed.user.service.UserService;
+import com.inmed.exception.custom.InvalidRefreshTokenException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
-import com.inmed.auth.dto.ActiveSessionResponse;
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final UserRepository userRepository;
-
-    private final PasswordEncoder passwordEncoder;
-
+    private final LoginService loginService;
+    private final SessionService sessionService;
     private final RefreshTokenService refreshTokenService;
-
+    private final UserRepository userRepository;
     private final JwtService jwtService;
+    private final JwtBlacklistService jwtBlacklistService;
 
-    private final LoginAuditService loginAuditService;
-
-    private final UserService userService;
-
-    public AuthResponse login(LoginRequest request,
-                              String ipAddress) {
-
-        User user = userRepository
-                .findByUsername(request.getUsername())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Invalid username or password"
-                        )
-                );
-
-        // MODIFICACIÓN AQUÍ: Lanzamos tu excepción personalizada
-        if (!Boolean.TRUE.equals(user.getEnabled())) {
-
-            boolean unlocked =
-                    userService
-                            .unlockWhenLockExpired(
-                                    user
-                            );
-
-            if (!unlocked) {
-
-                throw new UserBlockedException(
-                        "User is blocked"
-                );
-            }
-        }
-
-        boolean matches =
-                passwordEncoder.matches(
-                        request.getPassword(),
-                        user.getPassword()
-                );
-
-        if (!matches) {
-
-            userService
-                    .increaseFailedAttempts(
-                            user
-                    );
-
-            loginAuditService.register(
-                    request.getUsername(),
-                    "FAILED",
-                    ipAddress
-            );
-
-            throw new ResourceNotFoundException(
-                    "Invalid username or password"
-            );
-        }
-
-        String accessToken =
-                jwtService.generateToken(
-                        user.getUsername(),
-                        user.getRole().name()
-                );
-
-        String refreshToken =
-                refreshTokenService
-                        .createRefreshToken(user)
-                        .getToken();
-
-        loginAuditService.register(
-                user.getUsername(),
-                "SUCCESS",
-                ipAddress
-        );
-
-        userService.resetFailedAttempts(
-                user
-        );
-
-        return AuthResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .username(user.getUsername())
-                .role(user.getRole().name())
-                .build();
+    public AuthResponse login(LoginRequest request, String ip) {
+        return loginService.login(request, ip);
     }
 
-    public AuthResponse refreshToken(
-            String refreshToken
-    ) {
+    public AuthResponse refreshToken(String refreshToken) {
 
-        RefreshToken storedToken =
-                refreshTokenService
-                        .findByToken(refreshToken);
+        var stored = refreshTokenService.findByToken(refreshToken);
 
-        if (!refreshTokenService.isValid(storedToken)) {
-
-            throw new InvalidRefreshTokenException(
-                    "Refresh token expired"
-            );
+        if (!refreshTokenService.isValid(stored)) {
+            throw new InvalidRefreshTokenException("Refresh token expired");
         }
 
-        User user =
-                storedToken.getUser();
+        User user = stored.getUser();
 
-        String newAccessToken =
-                jwtService.generateToken(
-                        user.getUsername(),
-                        user.getRole().name()
-                );
+        String newAccessToken = jwtService.generateToken(
+                user.getUsername(),
+                user.getRole().name()
+        );
 
         return AuthResponse.builder()
                 .accessToken(newAccessToken)
-                .refreshToken(storedToken.getToken())
+                .refreshToken(stored.getToken())
                 .username(user.getUsername())
                 .role(user.getRole().name())
                 .build();
     }
 
-    public void logout(
-            String refreshToken
-    ) {
+    public void logout(String refreshToken, String accessToken) {
 
-        RefreshToken storedToken =
-                refreshTokenService
-                        .findByToken(refreshToken);
-
-        refreshTokenService.delete(storedToken);
+        sessionService.logout(refreshToken);
+        long ttl = jwtService.getExpiration(accessToken);
+        jwtBlacklistService.blacklistToken(accessToken, ttl);
     }
 
-    public List<ActiveSessionResponse>
-    getActiveSessions() {
-
-        return refreshTokenService
-                .findAll()
-                .stream()
-                .map(token ->
-                        ActiveSessionResponse
-                                .builder()
-                                .username(
-                                        token.getUser()
-                                                .getUsername()
-                                )
-                                .role(
-                                        token.getUser()
-                                                .getRole()
-                                                .name()
-                                )
-                                .expiresAt(
-                                        token.getExpiryDate()
-                                )
-                                .build()
-                )
-                .toList();
+    public List<ActiveSessionResponse> getActiveSessions() {
+        return sessionService.getActiveSessions();
     }
 
-    public void forceLogout(
-            String username
-    ) {
+    public void forceLogout(String username) {
 
-        User user =
-                userRepository
-                        .findByUsername(username)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "User not found"
-                                )
-                        );
+        User user = userRepository.findByUsername(username)
+                .orElseThrow();
 
-        refreshTokenService
-                .deleteByUser(user);
+        sessionService.forceLogout(user);
     }
 }
