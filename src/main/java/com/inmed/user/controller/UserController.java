@@ -3,7 +3,7 @@ package com.inmed.user.controller;
 import com.inmed.common.response.ApiResponse;
 import com.inmed.common.response.ResponseFactory;
 import com.inmed.user.dto.*;
-import com.inmed.user.service.UserService;
+import com.inmed.user.facade.UserFacade;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,7 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserController {
 
-    private final UserService userService;
+    private final UserFacade userFacade;
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
@@ -28,7 +28,7 @@ public class UserController {
 
         return ResponseFactory.success(
                 "User created successfully",
-                userService.createUser(request)
+                userFacade.createUser(request)
         );
     }
 
@@ -38,7 +38,7 @@ public class UserController {
 
         return ResponseFactory.success(
                 "Users retrieved successfully",
-                userService.getAllUsers()
+                userFacade.getAllUsers()
         );
     }
 
@@ -50,7 +50,7 @@ public class UserController {
 
         return ResponseFactory.success(
                 "User retrieved successfully",
-                userService.getUserById(id)
+                userFacade.getUserById(id)
         );
     }
 
@@ -70,7 +70,7 @@ public class UserController {
             @RequestBody UserStatusRequest request
     ) {
 
-        userService.blockUser(
+        userFacade.blockUser(
                 request.getUsername()
         );
 
@@ -86,7 +86,7 @@ public class UserController {
             @RequestBody UserStatusRequest request
     ) {
 
-        userService.unblockUser(
+        userFacade.unblockUser(
                 request.getUsername()
         );
 
@@ -102,7 +102,7 @@ public class UserController {
             @RequestBody ChangePasswordRequest request
     ) {
 
-        userService.changePassword(
+        userFacade.changePassword(
                 authentication.getName(),
                 request.getCurrentPassword(),
                 request.getNewPassword()
@@ -123,7 +123,7 @@ public class UserController {
 
         return ResponseFactory.success(
                 "User updated successfully",
-                userService.updateUser(id, request)
+                userFacade.updateUser(id, request)
         );
     }
 
@@ -133,7 +133,7 @@ public class UserController {
             @PathVariable Long id
     ) {
 
-        userService.deleteUser(id);
+        userFacade.deleteUser(id);
 
         return ResponseFactory.success(
                 "User deleted successfully"

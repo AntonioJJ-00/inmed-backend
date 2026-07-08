@@ -1,72 +1,39 @@
 package com.inmed.security.ratelimit;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.time.Duration;
 
 @Service
+@RequiredArgsConstructor
 public class RateLimiterService {
 
-    // Máximo de intentos permitidos
+    private final RedisTemplate<String, String> redisTemplate;
+
     private static final int MAX_REQUESTS = 5;
-
-    // Ventana de tiempo (1 minuto)
     private static final long WINDOW_SECONDS = 60;
-
-    private final Map<String, RequestCounter> requests =
-            new ConcurrentHashMap<>();
 
     public boolean allowRequest(String key) {
 
-        Instant now = Instant.now();
+        String redisKey = buildKey(key);
 
-        RequestCounter counter =
-                requests.computeIfAbsent(
-                        key,
-                        k -> new RequestCounter(0, now)
-                );
+        Long requests = redisTemplate.opsForValue().increment(redisKey);
 
-        synchronized (counter) {
-
-            long seconds =
-                    now.getEpochSecond()
-                            - counter.firstRequestTime.getEpochSecond();
-
-            // Si pasó el minuto, reinicia el contador
-            if (seconds >= WINDOW_SECONDS) {
-
-                counter.count = 1;
-                counter.firstRequestTime = now;
-
-                return true;
-            }
-
-            // Si llegó al límite
-            if (counter.count >= MAX_REQUESTS) {
-                return false;
-            }
-
-            counter.count++;
-
-            return true;
+        if (requests == null) {
+            return false;
         }
+
+        // primera petición → set TTL
+        if (requests == 1) {
+            redisTemplate.expire(redisKey, Duration.ofSeconds(WINDOW_SECONDS));
+        }
+
+        return requests <= MAX_REQUESTS;
     }
 
-    private static class RequestCounter {
-
-        private int count;
-
-        private Instant firstRequestTime;
-
-        public RequestCounter(
-                int count,
-                Instant firstRequestTime
-        ) {
-            this.count = count;
-            this.firstRequestTime = firstRequestTime;
-        }
+    private String buildKey(String key) {
+        return "rate_limit:login:" + key;
     }
-
 }

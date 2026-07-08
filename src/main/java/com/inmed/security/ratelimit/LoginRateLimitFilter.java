@@ -25,26 +25,21 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        if (request.getRequestURI().equals("/api/auth/login")
-                && HttpMethod.POST.matches(request.getMethod())) {
+        if (isLogin(request)) {
 
-            String clientIp = request.getRemoteAddr();
+            String key = resolveKey(request);
 
-            boolean allowed =
-                    rateLimiterService.allowRequest(clientIp);
+            boolean allowed = rateLimiterService.allowRequest(key);
 
             if (!allowed) {
 
-                response.setStatus(
-                        HttpStatus.TOO_MANY_REQUESTS.value()
-                );
-
+                response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
                 response.setContentType("application/json");
 
                 response.getWriter().write("""
                         {
-                            "status":429,
-                            "message":"Too many login attempts. Please try again later."
+                          "status": 429,
+                          "message": "Too many login attempts. Try again later."
                         }
                         """);
 
@@ -55,4 +50,22 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
+    private boolean isLogin(HttpServletRequest request) {
+        return "/api/auth/login".equals(request.getRequestURI())
+                && HttpMethod.POST.matches(request.getMethod());
+    }
+
+    private String resolveKey(HttpServletRequest request) {
+
+        String ip = request.getHeader("X-Forwarded-For");
+
+        if (ip != null && !ip.isBlank()) {
+            ip = ip.split(",")[0];
+        } else {
+            ip = request.getRemoteAddr();
+        }
+
+        // clave base (IP)
+        return ip;
+    }
 }

@@ -1,8 +1,10 @@
 package com.inmed.security;
 
+import com.inmed.security.blacklist.JwtBlacklistService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -10,7 +12,10 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 
 @Service
+@RequiredArgsConstructor
 public class JwtService {
+
+    private final JwtBlacklistService jwtBlacklistService;
 
     @Value("${jwt.secret}")
     private String secretKey;
@@ -18,7 +23,6 @@ public class JwtService {
     @Value("${jwt.expiration}")
     private long expiration;
 
-    // GENERAR TOKEN
     public String generateToken(String username, String role) {
 
         return Jwts.builder()
@@ -30,22 +34,31 @@ public class JwtService {
                 .compact();
     }
 
-    // EXTRAER USERNAME
     public String extractUsername(String token) {
         return extractAllClaims(token).getSubject();
     }
 
-    // VALIDAR TOKEN (simple por ahora)
     public boolean isTokenValid(String token) {
+
         try {
+
+            if (jwtBlacklistService.isBlacklisted(token)) {
+                return false;
+            }
+
             extractAllClaims(token);
             return true;
+
         } catch (Exception e) {
             return false;
         }
     }
 
-    // CLAIMS
+    public long getExpiration(String token) {
+        Claims claims = extractAllClaims(token);
+        return claims.getExpiration().getTime() - System.currentTimeMillis();
+    }
+
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
                 .verifyWith(getSigningKey())
@@ -54,7 +67,6 @@ public class JwtService {
                 .getPayload();
     }
 
-    // CLAVE SECRETA
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(secretKey.getBytes());
     }
