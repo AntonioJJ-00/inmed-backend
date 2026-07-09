@@ -30,8 +30,6 @@ public class BranchServiceImpl implements BranchService {
     private final AuditService auditService;
     private final CompanyFacade companyFacade;
 
-    Company company = companyFacade.getCompany();
-
     @Override
     public BranchResponse create(CreateBranchRequest request) {
 
