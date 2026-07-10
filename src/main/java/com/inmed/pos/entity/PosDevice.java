@@ -66,6 +66,15 @@ public class PosDevice {
     @Column(name = "app_version", length = 20)
     private String appVersion;
 
+    @Column(name = "last_ip", length = 50)
+    private String lastIp;
+
+    @Column(name = "hostname", length = 100)
+    private String hostname;
+
+    @Column(name = "operating_system", length = 100)
+    private String operatingSystem;
+
     @Column(nullable = false)
     private Boolean enabled;
 
@@ -98,8 +107,5 @@ public class PosDevice {
     public void onUpdate() {
 
         updatedAt = LocalDateTime.now();
-    }
-
-    public void setLastIp(String ipAddress) {
     }
 }

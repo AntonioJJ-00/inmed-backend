@@ -28,6 +28,12 @@ public class PosResponse {
 
     private String appVersion;
 
+    private String lastIp;
+
+    private String hostname;
+
+    private String operatingSystem;
+
     private LocalDateTime lastHeartbeat;
 
     private LocalDateTime createdAt;
