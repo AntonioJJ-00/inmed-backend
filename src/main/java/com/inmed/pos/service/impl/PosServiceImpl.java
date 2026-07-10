@@ -151,6 +151,7 @@ public class PosServiceImpl implements PosService {
         pos.setEnabled(
                 request.getEnabled()
         );
+
         PosDevice updated =
                 posRepository.save(pos);
         auditService.save(

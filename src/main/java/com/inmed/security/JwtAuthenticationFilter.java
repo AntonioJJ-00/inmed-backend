@@ -24,7 +24,7 @@ public class JwtAuthenticationFilter
 
     private final JwtService jwtService;
     private final JwtBlacklistService jwtBlacklistService;
-    private final UserDetailsService userDetailsService;
+    private final PosAwareUserDetailsService userDetailsService;
 
     @Override
     protected void doFilterInternal(

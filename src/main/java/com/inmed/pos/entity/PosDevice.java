@@ -100,4 +100,6 @@ public class PosDevice {
         updatedAt = LocalDateTime.now();
     }
 
+    public void setLastIp(String ipAddress) {
+    }
 }

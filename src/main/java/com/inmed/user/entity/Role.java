@@ -3,5 +3,6 @@ package com.inmed.user.entity;
 public enum Role {
     ADMIN,
     MANAGER,
-    CASHIER
+    CASHIER,
+    ROLE_POS
 }
