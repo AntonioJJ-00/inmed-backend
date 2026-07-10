@@ -1,0 +1,23 @@
+package com.inmed.PosCredential.service;
+
+import com.inmed.PosCredential.dto.request.CreatePosCredentialRequest;
+import com.inmed.PosCredential.dto.response.PosCredentialResponse;
+
+import java.util.List;
+
+public interface PosCredentialService {
+
+    PosCredentialResponse create(
+            CreatePosCredentialRequest request
+    );
+
+    List<PosCredentialResponse> getAll();
+
+    PosCredentialResponse getById(
+            Long id
+    );
+
+    void disable(
+            Long id
+    );
+}

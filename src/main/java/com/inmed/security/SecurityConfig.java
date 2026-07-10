@@ -23,6 +23,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final LoginRateLimitFilter loginRateLimitFilter;
     private final CorrelationIdFilter correlationIdFilter;
+    private final PosAwareUserDetailsService userDetailsService;
 
     @Bean
     public SecurityFilterChain securityFilterChain(
@@ -70,7 +71,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
 
                         // Endpoints públicos
-                        .requestMatchers("/api/auth/**")
+                        .requestMatchers("/api/auth/**",
+                                "/api/v1/pos/auth/**")
                         .permitAll()
 
                         // Todo lo demás requiere autenticación
