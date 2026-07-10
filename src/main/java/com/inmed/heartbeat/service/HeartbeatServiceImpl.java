@@ -42,18 +42,17 @@ public class HeartbeatServiceImpl
 
         PosDevice pos = credential.getPosDevice();
 
-        pos.setLastHeartbeat(
-                LocalDateTime.now()
-        );
-        pos.setAppVersion(
-                request.getAppVersion()
-        );
-        pos.setStatus(
-                PosStatus.ACTIVE
-        );
-        pos.setLastIp(
-                request.getIpAddress()
-        );
+        pos.setLastHeartbeat(LocalDateTime.now());
+
+        pos.setAppVersion(request.getAppVersion());
+
+        pos.setStatus(PosStatus.ACTIVE);
+
+        pos.setLastIp(request.getIpAddress());
+
+        pos.setHostname(request.getHostname());
+
+        pos.setOperatingSystem(request.getOperatingSystem());
 
         posRepository.save(pos);
 
