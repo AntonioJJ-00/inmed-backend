@@ -20,7 +20,7 @@ public class RateLimiterService {
         String redisKey = buildKey(key);
 
         Long requests = redisTemplate.opsForValue().increment(redisKey);
-
+        System.out.println("Rate Limit Filter");
         if (requests == null) {
             return false;
         }

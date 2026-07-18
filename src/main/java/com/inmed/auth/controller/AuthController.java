@@ -24,18 +24,16 @@ public class AuthController {
 
     @PostMapping("/login")
     public ApiResponse<AuthResponse> login(
-            @Valid
-            @RequestBody LoginRequest request,
+            @Valid @RequestBody LoginRequest request,
             HttpServletRequest servletRequest
     ) {
+
+        System.out.println("========== LOGIN CONTROLLER ==========");
 
         String ip = servletRequest.getRemoteAddr();
 
         AuthResponse response =
-                authFacade.login(
-                        request,
-                        ip
-                );
+                authFacade.login(request, ip);
 
         return ResponseFactory.success(
                 "Login successful",
@@ -45,18 +43,36 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public ApiResponse<AuthResponse> refreshToken(
-            @RequestBody RefreshRequest request
-    ) {
+
+            @RequestBody RefreshRequest request,
+
+            HttpServletRequest servletRequest
+
+    ){
+
+        String ip =
+                servletRequest.getRemoteAddr();
+
+
+        String device =
+                servletRequest.getHeader(
+                        "User-Agent"
+                );
+
 
         AuthResponse response =
                 authFacade.refreshToken(
-                        request.getRefreshToken()
+                        request.getRefreshToken(),
+                        ip,
+                        device
                 );
+
 
         return ResponseFactory.success(
                 "Token refreshed successfully",
                 response
         );
+
     }
 
     @PostMapping("/logout")
