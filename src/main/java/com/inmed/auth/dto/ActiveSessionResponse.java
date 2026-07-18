@@ -9,9 +9,17 @@ import java.time.LocalDateTime;
 @Builder
 public class ActiveSessionResponse {
 
+    private String sessionId;
+    private Long userId;
     private String username;
-
     private String role;
-
+    private String status;
+    private String ipAddress;
+    private String device;
+    private String clientType;
+    private Integer version;
+    private LocalDateTime loginAt;
+    private LocalDateTime lastUsedAt;
     private LocalDateTime expiresAt;
+    private Long durationMinutes;
 }

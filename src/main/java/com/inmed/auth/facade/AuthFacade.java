@@ -21,9 +21,17 @@ public class AuthFacade {
     }
 
     public AuthResponse refreshToken(
-            String refreshToken
-    ) {
-        return authService.refreshToken(refreshToken);
+            String refreshToken,
+            String ip,
+            String device
+    ){
+
+        return authService.refreshToken(
+                refreshToken,
+                ip,
+                device
+        );
+
     }
 
     public void logout(String refreshToken, String accessToken) {

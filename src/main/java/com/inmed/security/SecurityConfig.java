@@ -13,6 +13,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import com.inmed.common.filter.CorrelationIdFilter;
+import com.inmed.security.handler.CustomAccessDeniedHandler;
+import com.inmed.security.handler.CustomAuthenticationEntryPoint;
 
 @Configuration
 @EnableMethodSecurity
@@ -24,6 +26,8 @@ public class SecurityConfig {
     private final LoginRateLimitFilter loginRateLimitFilter;
     private final CorrelationIdFilter correlationIdFilter;
     private final PosAwareUserDetailsService userDetailsService;
+    private final CustomAuthenticationEntryPoint authenticationEntryPoint;
+    private final CustomAccessDeniedHandler accessDeniedHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(
@@ -32,71 +36,59 @@ public class SecurityConfig {
 
         http
                 .csrf(csrf -> csrf.disable())
-
                 .cors(cors -> {
                 })
-
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS
                         )
                 )
-
                 .headers(headers -> headers
-
                         .frameOptions(frame ->
                                 frame.deny()
                         )
-
                         .xssProtection(xss ->
                                 xss.disable()
                         )
-
                         .contentTypeOptions(contentType -> {
                         })
-
                         .httpStrictTransportSecurity(hsts ->
                                 hsts
                                         .includeSubDomains(true)
                                         .maxAgeInSeconds(31536000)
                         )
-
                         .contentSecurityPolicy(csp ->
                                 csp.policyDirectives(
                                         "default-src 'self'"
                                 )
                         )
                 )
-
                 .authorizeHttpRequests(auth -> auth
-
                         // Endpoints públicos
                         .requestMatchers("/api/auth/**",
                                 "/api/v1/pos/auth/**")
                         .permitAll()
-
                         // Todo lo demás requiere autenticación
                         .anyRequest()
                         .authenticated()
                 )
-
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler))
                 // Rate Limit
                 .addFilterBefore(
                         loginRateLimitFilter,
                         UsernamePasswordAuthenticationFilter.class
                 )
-
                 .addFilterBefore(
                         correlationIdFilter,
                         UsernamePasswordAuthenticationFilter.class
                 )
-
                 // JWT
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
                 );
-
         return http.build();
     }
 
@@ -104,7 +96,6 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration configuration
     ) throws Exception {
-
         return configuration.getAuthenticationManager();
     }
 

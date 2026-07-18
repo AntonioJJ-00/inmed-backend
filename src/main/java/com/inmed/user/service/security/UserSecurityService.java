@@ -37,7 +37,7 @@ public class UserSecurityService {
             user.setEnabled(false);
             user.setLockedAt(LocalDateTime.now());
 
-            refreshTokenService.deleteByUser(user);
+            refreshTokenService.revokeAll(user);
 
             auditService.save(
                     "SYSTEM",
@@ -99,7 +99,7 @@ public class UserSecurityService {
         user.setEnabled(false);
         user.setLockedAt(LocalDateTime.now());
 
-        refreshTokenService.deleteByUser(user);
+        refreshTokenService.revokeAll(user);
 
         auditService.save("SYSTEM", "BLOCK", username, "User blocked");
 
@@ -130,7 +130,7 @@ public class UserSecurityService {
         }
 
         user.setPassword(passwordEncoder.encode(newPass));
-        refreshTokenService.deleteByUser(user);
+        refreshTokenService.revokeAll(user);
 
         auditService.save(username, "CHANGE_PASSWORD", username, "Password changed");
 

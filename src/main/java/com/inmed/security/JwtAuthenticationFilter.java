@@ -6,11 +6,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -32,44 +30,60 @@ public class JwtAuthenticationFilter
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
-
         try {
-
             String header = request.getHeader("Authorization");
-
             if (header == null || !header.startsWith("Bearer ")) {
                 filterChain.doFilter(request, response);
                 return;
             }
-
             String token = header.substring(7);
-            // 🔐 CHECK BLACKLIST
+            // Token revocado
             if (jwtBlacklistService.isBlacklisted(token)) {
                 filterChain.doFilter(request, response);
                 return;
             }
+            // Firma, expiración, issuer, audience, etc.
+            if (!jwtService.isTokenValid(token)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
             String username = jwtService.extractUsername(token);
-
             if (username != null &&
                     SecurityContextHolder.getContext().getAuthentication() == null) {
-
                 UserDetails userDetails =
                         userDetailsService.loadUserByUsername(username);
-
-                UsernamePasswordAuthenticationToken auth =
+                // Usuario deshabilitado
+                if (!userDetails.isEnabled()) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+                // Cuenta bloqueada
+                if (!userDetails.isAccountNonLocked()) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+                // Defensa adicional
+                if (!username.equals(userDetails.getUsername())) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+                UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 userDetails,
                                 null,
                                 userDetails.getAuthorities()
                         );
-
-                SecurityContextHolder.getContext().setAuthentication(auth);
+                authentication.setDetails(
+                        new WebAuthenticationDetailsSource()
+                                .buildDetails(request)
+                );
+                SecurityContextHolder
+                        .getContext()
+                        .setAuthentication(authentication);
             }
-
-        } catch (Exception e) {
+        } catch (Exception ex) {
             SecurityContextHolder.clearContext();
         }
-
         filterChain.doFilter(request, response);
     }
 }

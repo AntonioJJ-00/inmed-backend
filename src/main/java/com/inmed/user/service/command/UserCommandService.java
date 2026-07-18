@@ -30,7 +30,7 @@ public class UserCommandService {
     }
 
     private void invalidate(User user) {
-        refreshTokenService.deleteByUser(user);
+        refreshTokenService.revokeAll(user);
     }
 
     public UserResponse createUser(CreateUserRequest request) {

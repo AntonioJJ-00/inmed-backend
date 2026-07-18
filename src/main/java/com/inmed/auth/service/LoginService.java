@@ -1,5 +1,7 @@
 package com.inmed.auth.service;
 
+import com.inmed.auth.audit.enums.SecurityEventType;
+import com.inmed.auth.audit.service.AuthSecurityAuditService;
 import com.inmed.auth.dto.AuthResponse;
 import com.inmed.auth.dto.LoginRequest;
 import com.inmed.exception.custom.ResourceNotFoundException;
@@ -22,13 +24,31 @@ public class LoginService {
     private final RefreshTokenService refreshTokenService;
     private final LoginAuditService loginAuditService;
     private final UserSecurityService userSecurityService;
+    private final AuthSecurityAuditService authSecurityAuditService;
 
     public AuthResponse login(LoginRequest request, String ipAddress) {
 
-        User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Invalid username or password")
-                );
+        User user =
+                userRepository.findByUsername(
+                                request.getUsername()
+                        )
+                        .orElse(null);
+
+
+        if(user == null){
+
+            authSecurityAuditService.logAnonymous(
+                    SecurityEventType.LOGIN_FAILED,
+                    request.getUsername(),
+                    ipAddress,
+                    "WEB",
+                    "{\"reason\":\"USER_NOT_FOUND\"}"
+            );
+
+            throw new ResourceNotFoundException(
+                    "Invalid username or password"
+            );
+        }
 
         // 🔐 VALIDAR BLOQUEO (delegado correctamente)
         if (!user.getEnabled()) {
@@ -51,6 +71,14 @@ public class LoginService {
                     ipAddress
             );
 
+            authSecurityAuditService.logAnonymous(
+                    SecurityEventType.LOGIN_FAILED,
+                    request.getUsername(),
+                    ipAddress,
+                    "WEB",
+                    "{\"reason\":\"INVALID_PASSWORD\"}"
+            );
+
             throw new ResourceNotFoundException("Invalid username or password");
         }
 
@@ -63,15 +91,28 @@ public class LoginService {
                 user.getRole().name()
         );
 
-        String refreshToken = refreshTokenService
-                .createRefreshToken(user)
-                .getToken();
+        String refreshToken =
+                refreshTokenService
+                        .createRefreshToken(
+                                user,
+                                ipAddress,
+                                "WEB"
+                        )
+                        .getToken();
 
         // 📊 AUDIT
         loginAuditService.register(
                 user.getUsername(),
                 "SUCCESS",
                 ipAddress
+        );
+        authSecurityAuditService.log(
+                SecurityEventType.LOGIN_SUCCESS,
+                user,
+                ipAddress,
+                "WEB",
+                refreshToken,
+                "{\"method\":\"PASSWORD\"}"
         );
 
         return AuthResponse.builder()
